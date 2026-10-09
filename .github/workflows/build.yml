@@ -17,11 +17,23 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Smoke test (Windows desktop code)
+        run: python tests/smoke_windows.py
+
       - name: Install PyInstaller
         run: pip install pyinstaller==6.11.1
 
       - name: Build TodoWidget.exe
         run: pyinstaller --onefile --windowed --name TodoWidget todo_widget.py
+
+      - name: Check the EXE starts and keeps running
+        shell: pwsh
+        run: |
+          $p = Start-Process dist\TodoWidget.exe -PassThru
+          Start-Sleep -Seconds 8
+          if ($p.HasExited) { Write-Error "TodoWidget.exe exited early (code $($p.ExitCode))"; exit 1 }
+          Stop-Process -Id $p.Id -Force
+          Write-Output "EXE ran for 8 seconds without crashing"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
